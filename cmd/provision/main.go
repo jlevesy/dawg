@@ -5,10 +5,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/jlevesy/dawg/generator"
 	"github.com/jlevesy/dawg/pkg/grafana"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
@@ -21,19 +23,19 @@ func main() {
 
 func run() int {
 	var (
-		generatorPath string
-		configPath    string
-		grafanaURL    string
-		grafanaToken  string
+		generatorURL string
+		configPath   string
+		grafanaURL   string
+		grafanaToken string
 	)
 
-	flag.StringVar(&generatorPath, "generator", "", "Path to the WASM binary of the generator")
+	flag.StringVar(&generatorURL, "generator", "", "Path to the WASM binary of the generator")
 	flag.StringVar(&configPath, "config", "", "Path to the config of the generator")
 	flag.StringVar(&grafanaURL, "grafana-url", "", "URL of the grafana instance to provision")
 	flag.StringVar(&grafanaToken, "grafana-token", "", "API token to use with the grafana instance")
 	flag.Parse()
 
-	if generatorPath == "" || configPath == "" {
+	if generatorURL == "" || configPath == "" {
 		fmt.Println("Must provide a generator path and the config path")
 		return 1
 	}
@@ -45,10 +47,21 @@ func run() int {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-
-	genBin, err := os.ReadFile(generatorPath)
+	loader, err := generator.DefaultLoader()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("could not load default loaders", err)
+		return 1
+	}
+
+	parsedGeneratorURL, err := url.Parse(generatorURL)
+	if err != nil {
+		fmt.Println("could not parse generator url", err)
+		return 1
+	}
+
+	gen, err := loader.Load(ctx, parsedGeneratorURL)
+	if err != nil {
+		fmt.Println("could not load generator", err)
 		return 1
 	}
 
@@ -63,7 +76,7 @@ func run() int {
 
 	wasi_snapshot_preview1.MustInstantiate(ctx, wasmRuntime)
 
-	mod, err := wasmRuntime.Instantiate(ctx, genBin)
+	mod, err := wasmRuntime.Instantiate(ctx, gen.Bin)
 	if err != nil {
 		fmt.Println("could not instanciate binary", err)
 		return 1
