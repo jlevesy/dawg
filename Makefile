@@ -7,7 +7,7 @@ $(GENERATOR_DIST):
 	mkdir -p $(GENERATOR_DIST)
 
 .PHONY: build_generators
-build_generators: generator/*
+build_generators: example/*
 	for dir in $^; do \
 		cd $${dir} && $(TINYGO) build -o $(GENERATOR_DIST)/$$(basename "$${dir}").wasm -scheduler=none --no-debug -target wasi ./generator.go ; \
 	done

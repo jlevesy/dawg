@@ -27,6 +27,8 @@ spec:
     name: super-deployment
 ```
 
+You can find a generator example [here](./example/simple)
+
 ### What this is right now?
 
 Currently a PoC that reads and executes a statically compiled WASM binary from filesystem, pushes it to grafana.
@@ -40,7 +42,7 @@ make generators
 Running the provisioner
 
 ```bash
-go run ./cmd/provision -generator .dist/simple.wasm -config generator/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
+go run ./cmd/provision -generator "file://${PWD}/.dist/simple.wasm" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
 ```
 
 ### Inspiration
