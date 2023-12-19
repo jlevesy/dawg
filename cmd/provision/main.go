@@ -47,7 +47,11 @@ func run() int {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-	loader := generator.DefaultLoader()
+	loader, err := generator.DefaultLoader()
+	if err != nil {
+		fmt.Println("could not load default loaders", err)
+		return 1
+	}
 
 	parsedGeneratorURL, err := url.Parse(generatorURL)
 	if err != nil {

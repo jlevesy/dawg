@@ -38,7 +38,5 @@ func DefaultLoader() (Loader, error) {
 	return schemeLoader{
 		fileScheme: &fileLoader{},
 		ociScheme:  ociLoader,
-		// try OCI as default scheme.
-		"": ociLoader,
 	}, nil
 }

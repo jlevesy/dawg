@@ -31,7 +31,7 @@ You can find a generator example [here](./example/simple)
 
 ### What this is right now?
 
-Currently a PoC that reads and executes a statically compiled WASM binary from filesystem, pushes it to grafana.
+Currently a PoC that reads and executes a statically compiled WASM binary loaded from the filesystem or an OCI registry, pushes it to grafana.
 
 Building the generators (you'll need tinygo)
 
@@ -42,8 +42,18 @@ make generators
 Running the provisioner
 
 ```bash
+# From a local wasm file
 go run ./cmd/provision -generator "file://${PWD}/.dist/simple.wasm" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
+
+# From a registry
+go run ./cmd/provision -generator "oci://youregistry.domain/reponame/geneatorname:tag" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
 ```
+
+Pushing a wasm binary to an OCI registry is done using [wasm-to-oci](https://github.com/engineerd/wasm-to-oci), but I'll bring that in house asap.
+
+```bash
+wasm-to-oci push .dist/simple.wasm  some-registry:5000/generators/simple:v0.0.1 --use-http
+``
 
 ### Inspiration
 
@@ -51,3 +61,8 @@ Based on projects built by @K-Phoen:
 
 - [dark](https://github.com/k-phoen/dark)
 - [foundation-sdk](https://github.com/grafana/grafana-foundation-sdk
+
+
+WASM to OCI:
+
+- [wasm-to-oci](https://github.com/engineerd/wasm-to-oci)
