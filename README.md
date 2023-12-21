@@ -43,7 +43,7 @@ Currently a PoC that reads and executes a compiled WASM binary loaded from the f
 I'm currently exploring the problem space as I'm both unfamilliar with WASM and OCI in depth.
 This is all very early stage, much TODO, very YOLO.
 
-Building the generators (you'll need tinygo). This will write the built generrators into `./.dist` by default.
+Building the generators (you'll need tinygo). This will write the built generrators into `./dist/generators` by default.
 
 ```bash
 make generators
@@ -53,7 +53,7 @@ Running the provisioner
 
 ```bash
 # From a local wasm file
-go run ./cmd/provision -generator "file://${PWD}/.dist/simple.wasm" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
+go run ./cmd/provision -generator "file://${PWD}/dist/generrators/simple.wasm" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
 
 # From a registry
 go run ./cmd/provision -generator "oci://youregistry.domain/reponame/geneatorname:tag" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
@@ -62,7 +62,7 @@ go run ./cmd/provision -generator "oci://youregistry.domain/reponame/geneatornam
 Pushing a wasm binary to an OCI registry is done using [wasm-to-oci](https://github.com/engineerd/wasm-to-oci), but I'll bring that in house asap.
 
 ```bash
-wasm-to-oci push .dist/simple.wasm  some-registry:5000/generators/simple:v0.0.1 --use-http
+wasm-to-oci push dist/generators/simple.wasm  some-registry:5000/generators/simple:v0.0.1 --use-http
 ```
 
 #### Lessons learnt
@@ -77,13 +77,18 @@ wasm-to-oci push .dist/simple.wasm  some-registry:5000/generators/simple:v0.0.1 
   - Ideally try to support another language than Go.
 - Make it a controller
 
+### Development Environment
+
+It comes with a basic developlent environment that creates a k8s cluster and provisions Grafana, Prometheus and a few exporters. It also provisions a registry on port `:5000`.
+
+You can run it using `make dev`.
+
 ### Resources
 
 Based on projects built by [K-Phoen](https://github.com/k-phoen/):
 
 - [dark](https://github.com/k-phoen/dark)
 - [foundation-sdk](https://github.com/grafana/grafana-foundation-sdk)
-
 
 WASM:
 
