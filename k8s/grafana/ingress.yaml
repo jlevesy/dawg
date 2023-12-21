@@ -1,0 +1,17 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+spec:
+  rules:
+  - host: dawg-dev.localhost
+    http:
+      paths:
+        - path: /grafana
+          pathType: Prefix
+          backend:
+            service:
+              name: grafana
+              port:
+                name: http
