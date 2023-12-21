@@ -77,13 +77,18 @@ wasm-to-oci push .dist/simple.wasm  some-registry:5000/generators/simple:v0.0.1 
   - Ideally try to support another language than Go.
 - Make it a controller
 
+### Development Environment
+
+It comes with a basic developlent environment that creates a k8s cluster and provisions Grafana, Prometheus and a few exporters. It also provisions a registry on port `:5000`.
+
+You can run it using `make dev`.
+
 ### Resources
 
 Based on projects built by [K-Phoen](https://github.com/k-phoen/):
 
 - [dark](https://github.com/k-phoen/dark)
 - [foundation-sdk](https://github.com/grafana/grafana-foundation-sdk)
-
 
 WASM:
 
