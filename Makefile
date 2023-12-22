@@ -1,3 +1,13 @@
+##@ Dev
+
+.PHONY: generate
+generate:
+	go generate -v ./...
+
+.PHONY: test
+test: generate
+	go test -timeout=5m -race -cover ./...
+
 ##@ Generators
 
 TINYGO=tinygo
