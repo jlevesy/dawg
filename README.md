@@ -37,45 +37,32 @@ Webassembly provides us with the following advantages:
 
 ### What this is right now
 
-
 Currently a PoC that reads and executes a compiled WASM binary loaded from the filesystem or an OCI registry and pushes it to grafana.
 
 I'm currently exploring the problem space as I'm both unfamilliar with WASM and OCI in depth.
 This is all very early stage, much TODO, very YOLO.
 
-Building the generators (you'll need tinygo). This will write the built generrators into `./dist/generators` by default.
+Building the examples generators (you'll need tinygo). This will write the built generrators into `./dist/generators` by default.
 
 ```bash
 make generators
 ```
 
-Running the provisioner
+Applyging a Generated Dashboard to Grafana
 
 ```bash
 # From a local wasm file
-go run ./cmd/provision -generator "file://${PWD}/dist/generrators/simple.wasm" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
+go run ./cmd/apply -generator "file://${PWD}/dist/generators/simple.wasm" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
 
 # From a registry
-go run ./cmd/provision -generator "oci://youregistry.domain/reponame/geneatorname:tag" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
+go run ./cmd/provision -generator "registry://youregistry.domain/reponame/generatorname:tag" -config ./example/simple/config.yaml -grafana-url=http://yourgrafanainstance  -grafana-token "yourtoken"
 ```
 
-Pushing a wasm binary to an OCI registry is done using [wasm-to-oci](https://github.com/engineerd/wasm-to-oci), but I'll bring that in house asap.
+Pushing a generator to a registry:
 
 ```bash
-wasm-to-oci push dist/generators/simple.wasm  some-registry:5000/generators/simple:v0.0.1 --use-http
+go run ./cmd/push -generator registry://registry.domain/remponame/generratorname:tag dist/generators/simple.wasm
 ```
-
-#### Lessons learnt
-
-- Calling WASM from go so far is not obvious, you have to specify a contract between the caller and the module and manage the module memory to allow passing arbitrary data. It's only possible to call passing and returning uint64s right now. I'm afraid this is highly dependent of the langage used in the module. Maybe WASM2.0 helps but this needs to be explored.
-- Pushing WASM to OCI registries is possible but not obvious just now.
-
-#### Next steps
-
-- Be able to push and pull the generators from a registry using oras/v2.
-- Stabilize the generator contract between the host and the generators. Which method needs to be exported by the wasm module? WASM2.0?
-  - Ideally try to support another language than Go.
-- Make it a controller
 
 ### Development Environment
 

@@ -3,12 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"unsafe"
 
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 	"github.com/grafana/grafana-foundation-sdk/go/timeseries"
+	"github.com/jlevesy/dawg/gdk"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,25 +16,11 @@ type config struct {
 	AppName string `yaml:"app_name"`
 }
 
-func readArgBuffer(ptr, size uint32) []byte {
-	return []byte(unsafe.String((*byte)(unsafe.Pointer(uintptr(ptr))), size))
-}
-
-func writeOutputBuffer(buf []byte) uint64 {
-	bufPtr := &buf[0]
-	unsafePtr := uintptr(unsafe.Pointer(bufPtr))
-
-	ptr := uint32(unsafePtr)
-	size := uint32(len(buf))
-
-	return (uint64(ptr) << uint64(32)) | uint64(size)
-}
-
 //export generate
 func generate(ptr, size uint32) uint64 {
 	var cfg config
 
-	if err := yaml.Unmarshal(readArgBuffer(ptr, size), &cfg); err != nil {
+	if err := yaml.Unmarshal(gdk.ReadInput(ptr, size), &cfg); err != nil {
 		panic(err)
 	}
 
@@ -67,7 +53,7 @@ func generate(ptr, size uint32) uint64 {
 		panic(err)
 	}
 
-	return writeOutputBuffer(out.Bytes())
+	return gdk.WriteOutput(out.Bytes())
 }
 
 // main is required for the `wasi` target, even if it isn't used.

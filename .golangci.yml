@@ -1,0 +1,5 @@
+issues:
+  exclude-rules:
+    # We don't run go generate on the lint job.
+    - path: generator/runtime_test.go
+      text: "pattern testdata/runtime/(.*).wasm: no matching files found"
