@@ -6,7 +6,7 @@ generate:
 
 .PHONY: test
 test: generate
-	go test -count=1 -timeout=5m -race -cover ./...
+	go test -count=1 -v -timeout=5m -race -cover ./...
 
 ##@ Generators
 

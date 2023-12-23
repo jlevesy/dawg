@@ -3,9 +3,11 @@ package generator_test
 import (
 	"context"
 	"io"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -110,6 +112,16 @@ func runTestRegistry(t *testing.T) *registryInstance {
 	}
 
 	require.NotEmpty(t, hostPort, "No host port found for registry port 5000")
+
+	// ping the registry before running the test.
+	for {
+		if _, err := http.Head("http://localhost:" + hostPort + "/"); err == nil {
+			break
+		}
+
+		t.Log("Registry is not accepting connections yet, retrying...")
+		time.Sleep(500 * time.Millisecond)
+	}
 
 	return &registryInstance{
 		docker:      docker,
