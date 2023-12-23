@@ -1,19 +1,8 @@
 package main
 
-import (
-	"os"
-
-	"github.com/jlevesy/dawg/gdk"
-)
-
 //export generate
 func generate() uint64 {
-	configBytes, err := os.ReadFile(gdk.InputPath)
-	if err != nil {
-		return gdk.Error(err)
-	}
-
-	return gdk.WriteOutput(configBytes)
+	panic("PANIC")
 }
 
 // main is required for the `wasi` target, even if it isn't used.

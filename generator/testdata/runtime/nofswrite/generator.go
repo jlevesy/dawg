@@ -8,12 +8,11 @@ import (
 
 //export generate
 func generate() uint64 {
-	configBytes, err := os.ReadFile(gdk.InputPath)
-	if err != nil {
+	if err := os.WriteFile("./hacked", []byte("YOU HAVE BEEN PWNED"), 0777); err != nil {
 		return gdk.Error(err)
 	}
 
-	return gdk.WriteOutput(configBytes)
+	return 0
 }
 
 // main is required for the `wasi` target, even if it isn't used.
