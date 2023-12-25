@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -17,11 +18,16 @@ type config struct {
 }
 
 //export generate
-func generate(ptr, size uint32) uint64 {
+func generate() uint64 {
+	configBytes, err := os.ReadFile(gdk.InputPath)
+	if err != nil {
+		return gdk.Error(err)
+	}
+
 	var cfg config
 
-	if err := yaml.Unmarshal(gdk.ReadInput(ptr, size), &cfg); err != nil {
-		panic(err)
+	if err := yaml.Unmarshal(configBytes, &cfg); err != nil {
+		return gdk.Error(err)
 	}
 
 	dashboard, err := dashboard.NewDashboardBuilder(cfg.AppName).
@@ -44,13 +50,13 @@ func generate(ptr, size uint32) uint64 {
 		).
 		Build()
 	if err != nil {
-		panic(err)
+		return gdk.Error(err)
 	}
 
 	var out bytes.Buffer
 
 	if err := json.NewEncoder(&out).Encode(dashboard); err != nil {
-		panic(err)
+		return gdk.Error(err)
 	}
 
 	return gdk.WriteOutput(out.Bytes())

@@ -8,12 +8,7 @@ import (
 
 //export generate
 func generate() uint64 {
-	configBytes, err := os.ReadFile(gdk.InputPath)
-	if err != nil {
-		return gdk.Error(err)
-	}
-
-	return gdk.WriteOutput(configBytes)
+	return gdk.WriteOutput([]byte(os.Getenv("DAWG_TEST_SUITE_SECRET")))
 }
 
 // main is required for the `wasi` target, even if it isn't used.
