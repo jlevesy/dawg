@@ -1,12 +1,27 @@
-##@ Dev
+##@ Development
 
 .PHONY: generate
-generate:
+generate: generate_manifests generate_code generate_wasm
+
+.PHONY: generate_manifests
+generate_manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=dawg-controller-role crd paths="./..." output:crd:artifacts:config=k8s/crd output:rbac:artifacts:config=k8s/dawg
+
+.PHONY: generate_code
+generate_code: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+.PHONY: generate_wasm
+generate_wasm:
 	go generate -v ./...
 
+.PHONY: clean_generate_wasm
+clean_generate_wasm:
+	cd ./generator/testdata/runtime && rm -f *.wasm
+
 .PHONY: test
-test: generate
-	go test -count=1 -v -timeout=5m -race -cover ./...
+test: generate_wasm
+	go test -count=1 -v -timeout=5m -race -cover -run=$(T) ./...
 
 ##@ Generators
 
@@ -33,9 +48,10 @@ clean_generators:
 K3S_VERSION?=v1.27.3-k3s1
 DEV_CLUSTER_PORT?=3000
 DEV_CLUSTER_NAME?=dawg-dev
+VERSION?=unknown
 
 .PHONY: dev
-dev: preflight_dev create_cluster deploy_dependencies
+dev: preflight_dev generate create_cluster install deploy_dependencies deploy
 
 .PHONY: create_cluster
 create_cluster: ## run a local k3d cluster
@@ -48,6 +64,22 @@ create_cluster: ## run a local k3d cluster
 .PHONY: delete_cluster
 delete_cluster: ## tears down the k3d dev cluster
 	k3d cluster delete $(DEV_CLUSTER_NAME)
+
+.PHONY: install
+install: generate_manifests ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	kubectl apply -f k8s/crd
+
+.PHONY: uninstall
+uninstall: ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config
+	kubectl delete -f k8s/crd
+
+.PHONY: deploy
+deploy: generate_code generate_manifests
+	kubectl kustomize k8s/dawg | VERSION=$(VERSION) KO_DOCKER_REPO=dawg-dev.localhost:5000 ko apply -f -
+
+.PHONY: undeploy
+undeploy: generate_manifests
+	kubectl kustomize k8s/dawg | kubectl delete -f -
 
 .PHONY: deploy_dependencies
 deploy_dependencies: deploy_grafana deploy_prometheus deploy_ksb ## deploy all the dependencies
@@ -71,4 +103,19 @@ preflight_dev: ## Checks that all the necesary binaries are present
 	@ko version >/dev/null 2>&1 || (echo "ERROR: ko is required."; exit 1)
 	@grep -Fq "$(DEV_CLUSTER_NAME).localhost" /etc/hosts || (echo "ERROR: please add the following line '127.0.0.1 $(DEV_CLUSTER_NAME).localhost' to your /etc/hosts file"; exit 1)
 
+## Tool Binaries
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
 
+KUBECTL ?= kubectl
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)

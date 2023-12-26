@@ -50,11 +50,7 @@ func (s schemeStore) Store(ctx context.Context, url *url.URL, g *Generator) erro
 }
 
 func DefaultStore() (Store, error) {
-	registryStore, err := newRegistryStore()
-	if err != nil {
-		return nil, err
-	}
-
+	registryStore := newRegistryStore()
 	return &schemeStore{
 		fileScheme:     &fileStore{},
 		registryScheme: registryStore,

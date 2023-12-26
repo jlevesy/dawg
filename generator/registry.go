@@ -30,10 +30,10 @@ var (
 		PlainHTTP: false,
 	}
 	defaultRegistriesSettings = map[string]registrySettings{
-		"dawg-dev.localhost": registrySettings{
+		"dawg-dev.localhost": {
 			PlainHTTP: true,
 		},
-		"localhost": registrySettings{
+		"localhost": {
 			PlainHTTP: true,
 		},
 	}
@@ -49,13 +49,13 @@ type registryStore struct {
 	registriesSettings map[string]registrySettings
 }
 
-func newRegistryStore() (*registryStore, error) {
+func newRegistryStore() *registryStore {
 	// TODO(jly): configure store.
 	// TODO(jly): use filesystem local store!?
 	return &registryStore{
 		localStore:         memory.New(),
 		registriesSettings: defaultRegistriesSettings,
-	}, nil
+	}
 }
 
 func (st *registryStore) Store(ctx context.Context, url *url.URL, gen *Generator) error {
@@ -136,7 +136,9 @@ func (st *registryStore) Load(ctx context.Context, url *url.URL) (*Generator, er
 		return nil, err
 	}
 
-	defer content.Close()
+	defer func() {
+		_ = content.Close()
+	}()
 
 	buf, err := io.ReadAll(content)
 	if err != nil {

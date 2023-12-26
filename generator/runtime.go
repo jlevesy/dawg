@@ -25,21 +25,30 @@ type Runtime interface {
 
 func DefaultRuntime(ctx context.Context) (Runtime, func(context.Context) error, error) {
 	// TODO(jly): compilation cache?
-	wasmRuntime := wazero.NewRuntime(ctx)
+	wasmRuntime := wazero.NewRuntimeWithConfig(
+		ctx,
+		wazero.NewRuntimeConfig().
+			// when the context passed to call expires,
+			// make sure to stop the execution.
+			WithCloseOnContextDone(true),
+	)
 
 	if _, err := wasi_snapshot_preview1.Instantiate(ctx, wasmRuntime); err != nil {
 		return nil, nil, err
 	}
 
 	return &runtime{
-		wasm:           wasmRuntime,
-		executeTimeout: time.Second,
+		wasm: wasmRuntime,
+		// TODO configure.
+		executeTimeout:     time.Second,
+		instantiateTimeout: time.Second,
 	}, wasmRuntime.Close, nil
 }
 
 type runtime struct {
-	wasm           wazero.Runtime
-	executeTimeout time.Duration
+	wasm               wazero.Runtime
+	executeTimeout     time.Duration
+	instantiateTimeout time.Duration
 }
 
 func (r *runtime) Execute(ctx context.Context, gen *Generator, payload []byte) (*ExecutionResult, error) {
@@ -49,8 +58,11 @@ func (r *runtime) Execute(ctx context.Context, gen *Generator, payload []byte) (
 		return nil, fmt.Errorf("could not write config file %w", err)
 	}
 
+	instanciateCtx, cancel := context.WithTimeout(ctx, r.instantiateTimeout)
+	defer cancel()
+
 	mod, err := r.wasm.InstantiateWithConfig(
-		ctx,
+		instanciateCtx,
 		gen.Bin,
 		wazero.NewModuleConfig().WithFSConfig(
 			wazero.NewFSConfig().WithFSMount(fs, "/dawg"),
@@ -60,7 +72,10 @@ func (r *runtime) Execute(ctx context.Context, gen *Generator, payload []byte) (
 		return nil, fmt.Errorf("could not instantiate generator module: %w", err)
 	}
 
-	defer mod.Close(ctx)
+	defer func() {
+		// TODO(jly): Log?
+		_ = mod.Close(ctx)
+	}()
 
 	fn := mod.ExportedFunction("generate")
 	if fn == nil {

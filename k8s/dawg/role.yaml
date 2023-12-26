@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dawg-controller-role
+rules:
+- apiGroups:
+  - dawg.urcloud.cc
+  resources:
+  - dashboards
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dawg.urcloud.cc
+  resources:
+  - dashboards/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - dawg.urcloud.cc
+  resources:
+  - dashboards/status
+  verbs:
+  - get
+  - patch
+  - update
