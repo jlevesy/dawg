@@ -1,0 +1,12 @@
+labels:
+  - pairs:
+      app.kubernetes.io/created-by: dawg
+      app.kubernetes.io/instance: dawg
+      app.kubernetes.io/part-of: dawg
+namespace: dawg
+resources:
+- deployment.yaml
+- namespace.yaml
+- service-account.yaml
+- cluster-role-binding.yaml
+- role.yaml

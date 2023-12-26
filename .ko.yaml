@@ -1,0 +1,6 @@
+defaultBaseImage: gcr.io/distroless/static:nonroot
+builds:
+  - id: controller
+    main: ./cmd/controller
+    ldflags:
+      - -X main.serviceVersion={{.Env.VERSION}}
