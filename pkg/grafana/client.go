@@ -104,7 +104,9 @@ func (c *Client) sendJSON(ctx context.Context, reqPayload, respPayload any) erro
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		var apiErr APIError

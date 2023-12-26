@@ -60,7 +60,10 @@ func (r *runtime) Execute(ctx context.Context, gen *Generator, payload []byte) (
 		return nil, fmt.Errorf("could not instantiate generator module: %w", err)
 	}
 
-	defer mod.Close(ctx)
+	defer func() {
+		// TODO(jly): Log?
+		_ = mod.Close(ctx)
+	}()
 
 	fn := mod.ExportedFunction("generate")
 	if fn == nil {

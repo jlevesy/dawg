@@ -31,9 +31,11 @@ func TestRuntime_Good(t *testing.T) {
 var goodGo121Bin []byte
 
 func TestRuntime_GoodWithGo121(t *testing.T) {
+	// See https://github.com/golang/go/issues/42372#issuecomment-1837330447
+	t.Skip("go 121 does not allow module exports, this doesn't work")
 	var payload = []byte(`{"some":"config"}`)
 
-	result, err := runWasm(t, goodTinygo, payload)
+	result, err := runWasm(t, goodGo121Bin, payload)
 	require.NoError(t, err)
 
 	assert.Equal(t, payload, result.Payload)
