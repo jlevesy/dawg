@@ -1,10 +1,14 @@
 package main
 
-import "time"
+import (
+	"fmt"
+)
 
 //export generate
 func generate() uint64 {
-	time.Sleep(1000 * time.Second)
+	for {
+		fmt.Println("poll poll poll, am bad.")
+	}
 	return 0
 }
 

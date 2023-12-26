@@ -134,20 +134,19 @@ func TestRuntime_NoNetwork(t *testing.T) {
 		<-listenerDone
 	})
 
-	result, err := runWasm(t, noNetBin, []byte(listener.Addr().String()))
-	t.Log("error is", err)
-	assert.Error(t, err)
-	assert.Empty(t, result)
+	_, err = runWasm(t, noNetBin, []byte(listener.Addr().String()))
+	assert.ErrorContains(t, err, `"sock_open" is not exported in module "wasi_snapshot_preview1"`)
 	assert.Equal(t, 0, called)
 }
 
-//go:generate env GOOS=wasip1 GOARCH=wasm go build -o ./testdata/runtime/hang.wasm ./testdata/runtime/hang
+//go:generate tinygo build -o ./testdata/runtime/hang.wasm -scheduler=none --no-debug -target wasi ./testdata/runtime/hang
 //go:embed testdata/runtime/hang.wasm
 var hangBin []byte
 
 func TestRuntime_Hang(t *testing.T) {
 	_, err := runWasm(t, hangBin, nil)
-	assert.Error(t, err)
+	// wazero doesn't exactly wrap this error as far as I can see.
+	assert.ErrorContains(t, err, context.DeadlineExceeded.Error())
 }
 
 func runWasm(t *testing.T, bin, args []byte) (*generator.ExecutionResult, error) {

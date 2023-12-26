@@ -15,9 +15,13 @@ generate_code: controller-gen ## Generate code containing DeepCopy, DeepCopyInto
 generate_wasm:
 	go generate -v ./...
 
+.PHONY: clean_generate_wasm
+clean_generate_wasm:
+	cd ./generator/testdata/runtime && rm -f *.wasm
+
 .PHONY: test
 test: generate_wasm
-	go test -count=1 -v -timeout=5m -race -cover ./...
+	go test -count=1 -v -timeout=5m -race -cover -run=$(T) ./...
 
 ##@ Generators
 
