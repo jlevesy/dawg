@@ -34,13 +34,31 @@ spec:
           spec:
             description: DashboardSpec defines the desired state of Dashboard
             properties:
-              foo:
-                description: Foo is an example field of Dashboard. Edit dashboard_types.go
-                  to remove/update
+              config:
+                type: string
+              generator:
                 type: string
             type: object
           status:
             description: DashboardStatus defines the observed state of Dashboard
+            properties:
+              error:
+                type: string
+              grafana:
+                properties:
+                  id:
+                    type: integer
+                  slug:
+                    type: string
+                  uid:
+                    type: string
+                  url:
+                    type: string
+                  version:
+                    type: integer
+                type: object
+              syncStatus:
+                type: string
             type: object
         type: object
     served: true
