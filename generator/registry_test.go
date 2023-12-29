@@ -19,12 +19,7 @@ func TestStore_Registry(t *testing.T) {
 		}
 	)
 
-	ts := testutil.RunContainer(t, testutil.ContainerConfig{
-		Image:           "registry:2",
-		Suffix:          "-registry",
-		ExposedPort:     "5000/tcp",
-		HealthcheckPath: "/",
-	})
+	ts := testutil.RunContainer(t, testutil.RegistryContainerConfig)
 	t.Cleanup(func() {
 		require.NoError(t, ts.Shutdown(context.Background()))
 	})

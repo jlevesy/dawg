@@ -16,6 +16,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	RegistryContainerConfig = ContainerConfig{
+		Image:           "registry:2",
+		Suffix:          "-registry",
+		ExposedPort:     "5000/tcp",
+		HealthcheckPath: "/",
+	}
+
+	KWOKContainerConfig = ContainerConfig{
+		Suffix:          "kwok",
+		Image:           "registry.k8s.io/kwok/cluster:v0.4.0-k8s.v1.28.0",
+		ExposedPort:     "8080/tcp",
+		HealthcheckPath: "/",
+		PortBindings:    []string{"0:8080/tcp"},
+	}
+)
+
 type ContainerInstance struct {
 	docker      *dockerclient.Client
 	ContainerID string
