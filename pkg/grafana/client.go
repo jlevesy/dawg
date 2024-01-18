@@ -73,9 +73,11 @@ type CreateDashboardRequest struct {
 
 type CreateDashboardResponse struct {
 	ID      int    `json:"id"`
+	UID     string `json:"uid"`
 	Status  string `json:"status"`
 	Version int    `json:"version"`
 	URL     string `json:"url"`
+	Slug    string `json:"slug"`
 }
 
 func (c *Client) CreateDashboard(ctx context.Context, req *CreateDashboardRequest) (*CreateDashboardResponse, error) {
