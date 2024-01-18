@@ -10,8 +10,12 @@ issues:
   # (fill in the rest as needed)
   exclude-rules:
      # We don't run go generate on the lint job.
-    - path: generator/runtime_test.go
-      text: "pattern testdata/runtime/(.*).wasm: no matching files found"
+    - source: "^//go:generate "
+      linters:
+        - typecheck
+    - source: "^//go:embed "
+      linters:
+        - typecheck
     - path: "api/*"
       linters:
         - lll

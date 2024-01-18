@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"path"
 )
 
 type Client struct {
-	cl *http.Client
+	httpClient *http.Client
 
 	host string
 }
@@ -17,7 +19,7 @@ type Client struct {
 type ClientOpt func(*Client)
 
 func NewClient(host string, opts ...ClientOpt) *Client {
-	cl := Client{cl: http.DefaultClient, host: host}
+	cl := Client{httpClient: http.DefaultClient, host: host}
 
 	for _, opt := range opts {
 		opt(&cl)
@@ -26,14 +28,20 @@ func NewClient(host string, opts ...ClientOpt) *Client {
 	return &cl
 }
 
+func WithRoundTripper(t http.RoundTripper) ClientOpt {
+	return func(cl *Client) {
+		cl.httpClient.Transport = t
+	}
+}
+
 func WithAuthToken(tok string) ClientOpt {
 	return func(cl *Client) {
-		next := cl.cl.Transport
+		next := cl.httpClient.Transport
 		if next == nil {
 			next = http.DefaultTransport
 		}
 
-		cl.cl.Transport = &authorizedRoundTripper{
+		cl.httpClient.Transport = &authorizedRoundTripper{
 			next: next,
 			tok:  tok,
 		}
@@ -51,8 +59,6 @@ func (a *authorizedRoundTripper) RoundTrip(r *http.Request) (*http.Response, err
 	return a.next.RoundTrip(r)
 }
 
-const dashboardDbEndpoint = "/api/dashboards/db"
-
 type APIError struct {
 	Message    string `json:"message"`
 	MessageID  string `json:"messageId"`
@@ -64,6 +70,8 @@ func (a *APIError) Error() string {
 	return fmt.Sprintf("[%s] %s (code=%d, traceID=%q)", a.MessageID, a.Message, a.StatusCode, a.TraceID)
 }
 
+const createDashboardEndpoint = "/api/dashboards/db"
+
 type CreateDashboardRequest struct {
 	Dashboard json.RawMessage `json:"dashboard"`
 	FolderUID string          `json:"folderUid"`
@@ -73,33 +81,68 @@ type CreateDashboardRequest struct {
 
 type CreateDashboardResponse struct {
 	ID      int    `json:"id"`
+	UID     string `json:"uid"`
 	Status  string `json:"status"`
 	Version int    `json:"version"`
 	URL     string `json:"url"`
+	Slug    string `json:"slug"`
 }
 
 func (c *Client) CreateDashboard(ctx context.Context, req *CreateDashboardRequest) (*CreateDashboardResponse, error) {
 	var resp CreateDashboardResponse
 
-	return &resp, c.sendJSON(ctx, req, &resp)
+	return &resp, c.do(ctx, http.MethodPost, createDashboardEndpoint, req, &resp)
 }
 
-func (c *Client) sendJSON(ctx context.Context, reqPayload, respPayload any) error {
-	var buf bytes.Buffer
+type DeleteDashboardRequest struct {
+	UID string
+}
 
-	if err := json.NewEncoder(&buf).Encode(reqPayload); err != nil {
-		return err
+type DeleteDashboardResponse struct {
+	Title   string `json:"title"`
+	Message string `json:"message"`
+	ID      int    `json:"id"`
+}
+
+const deleteDashboardEndpoint = "/api/dashboards/uid"
+
+func (c *Client) DeleteDashboard(ctx context.Context, req *DeleteDashboardRequest) (*DeleteDashboardResponse, error) {
+	var resp DeleteDashboardResponse
+
+	return &resp, c.do(
+		ctx,
+		http.MethodDelete,
+		path.Join(deleteDashboardEndpoint, req.UID),
+		nil,
+		&resp,
+	)
+}
+
+func (c *Client) do(ctx context.Context, method, path string, reqPayload, respPayload any) error {
+	var body io.Reader = http.NoBody
+
+	if reqPayload != nil {
+		var buf bytes.Buffer
+
+		if err := json.NewEncoder(&buf).Encode(reqPayload); err != nil {
+			return err
+		}
+
+		body = &buf
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.host+dashboardDbEndpoint, &buf)
+	req, err := http.NewRequestWithContext(ctx, method, c.host+path, body)
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	if reqPayload != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := c.cl.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}

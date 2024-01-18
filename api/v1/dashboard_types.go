@@ -20,22 +20,34 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // DashboardSpec defines the desired state of Dashboard
 type DashboardSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:required
+	Generator string `json:"generator,omitempty"`
 
-	// Foo is an example field of Dashboard. Edit dashboard_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:required
+	Config string `json:"config,omitempty"`
 }
+
+const (
+	DashboardStatusUnknown = "Unknown"
+	DashboardStatusError   = "Error"
+	DashboardStatusOK      = "OK"
+)
 
 // DashboardStatus defines the observed state of Dashboard
 type DashboardStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	SyncStatus string      `json:"syncStatus,omitempty"`
+	Grafana    GrafanaInfo `json:"grafana,omitempty"`
+	Error      string      `json:"error,omitempty"`
+}
+
+type GrafanaInfo struct {
+	ID      int    `json:"id,omitempty"`
+	UID     string `json:"uid,omitempty"`
+	Version int    `json:"version,omitempty"`
+	URL     string `json:"url,omitempty"`
+	Slug    string `json:"slug,omitempty"`
 }
 
 //+kubebuilder:object:root=true

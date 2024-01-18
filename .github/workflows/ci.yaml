@@ -34,6 +34,7 @@ jobs:
         with:
           go-version-file: './go.mod'
           check-latest: true
+          cache: false
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
