@@ -20,7 +20,10 @@ clean_generate_wasm:
 	cd ./generator/testdata/runtime && rm -f *.wasm
 
 .PHONY: test
-test: generate_wasm
+test: generate_wasm fast_test
+
+.PHONY: fast_test
+fast_test:
 	go test -count=1 -v -timeout=5m -race -cover -run=$(T) ./...
 
 ##@ Generators
