@@ -27,6 +27,5 @@ Dockerfile.cross
 *~
 
 # wasm binaries
-dist/*
-generator/testdata/runtime/*.wasm
+*.wasm
 
