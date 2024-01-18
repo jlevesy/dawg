@@ -18,6 +18,7 @@ generate_wasm:
 .PHONY: clean_generate_wasm
 clean_generate_wasm:
 	cd ./generator/testdata/runtime && rm -f *.wasm
+	cd ./internal/controller/testdata && rm -f *.wasm
 
 .PHONY: test
 test: generate_wasm fast_test
