@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
@@ -38,6 +39,7 @@ func NewTestingManager(t *testing.T, restConfig *rest.Config, reconcilers ...Set
 			// This disables the metric server.
 			BindAddress: "0",
 		},
+		Logger: zap.New(zap.UseDevMode(true)),
 	})
 	require.NoError(t, err)
 
