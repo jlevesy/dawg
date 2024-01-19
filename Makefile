@@ -85,6 +85,10 @@ deploy: generate_code generate_manifests
 undeploy: generate_manifests
 	kubectl kustomize k8s/dawg | kubectl delete -f -
 
+.PHONY: restart
+restart:
+	kubectl -n dawg rollout restart deployment dawg-controller
+
 .PHONY: deploy_dependencies
 deploy_dependencies: deploy_grafana deploy_prometheus deploy_ksb ## deploy all the dependencies
 
@@ -99,6 +103,11 @@ deploy_prometheus:
 .PHONY: deploy_ksb
 deploy_ksb:
 	kubectl apply -k k8s/kube-state-metrics
+
+.PHONY: set_grafana_token
+set_grafana_token:
+	git update-index --assume-unchanged k8s/dawg/.grafanatoken
+	echo -n $(GRAFANA_TOKEN) > k8s/dawg/.grafanatoken
 
 .PHONY: preflight_dev
 preflight_dev: ## Checks that all the necesary binaries are present

@@ -4,6 +4,12 @@ labels:
       app.kubernetes.io/instance: dawg
       app.kubernetes.io/part-of: dawg
 namespace: dawg
+secretGenerator:
+- name: grafana-token
+  options:
+    disableNameSuffixHash: true
+  files:
+  - .grafanatoken
 resources:
 - deployment.yaml
 - namespace.yaml
