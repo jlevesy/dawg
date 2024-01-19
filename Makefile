@@ -40,7 +40,14 @@ $(GENERATOR_DIST):
 .PHONY: build_generators
 build_generators: example/*
 	for dir in $^; do \
-		cd $${dir} && $(TINYGO) build -o $(GENERATOR_DIST)/$$(basename "$${dir}").wasm -scheduler=none --no-debug -target wasi ./generator.go ; \
+		cd $${dir} && $(TINYGO) build -o $(GENERATOR_DIST)/$$(basename "$${dir}") -scheduler=none --no-debug -target wasi ./generator.go ; \
+	done
+
+
+.PHONY: push_generators
+push_generators:
+	for bin in $(wildcard dist/generators/*); do \
+		go run ./cmd/push -generator registry://dawg-dev.localhost:5000/dashboards/$$(basename "$${bin}"):v0.0.1 $${bin} ; \
 	done
 
 .PHONY: clean_generators
@@ -55,7 +62,7 @@ DEV_CLUSTER_NAME?=dawg-dev
 VERSION?=unknown
 
 .PHONY: dev
-dev: preflight_dev generate create_cluster install deploy_dependencies deploy
+dev: preflight_dev generate create_cluster install deploy_dependencies deploy build_generators push_generators deploy_example
 
 .PHONY: create_cluster
 create_cluster: ## run a local k3d cluster
@@ -104,16 +111,25 @@ deploy_prometheus:
 deploy_ksb:
 	kubectl apply -k k8s/kube-state-metrics
 
+.PHONY: deploy_example
+deploy_example:
+	kubectl apply -k k8s/example
+
+.PHONY: undeploy_example
+undeploy_example:
+	kubectl kustomize k8s/example | kubectl delete -f -
+
 .PHONY: set_grafana_token
 set_grafana_token:
 	git update-index --assume-unchanged k8s/dawg/.grafanatoken
-	echo -n $(GRAFANA_TOKEN) > k8s/dawg/.grafanatoken
+	echo $(GRAFANA_TOKEN) > k8s/dawg/.grafanatoken
 
 .PHONY: preflight_dev
 preflight_dev: ## Checks that all the necesary binaries are present
 	@k3d version >/dev/null 2>&1 || (echo "ERROR: k3d is required."; exit 1)
 	@kubectl version --client >/dev/null 2>&1 || (echo "ERROR: kubectl is required."; exit 1)
 	@ko version >/dev/null 2>&1 || (echo "ERROR: ko is required."; exit 1)
+	@tinygo version >/dev/null 2>&1 || (echo "ERROR: tinygo is required."; exit 1)
 	@grep -Fq "$(DEV_CLUSTER_NAME).localhost" /etc/hosts || (echo "ERROR: please add the following line '127.0.0.1 $(DEV_CLUSTER_NAME).localhost' to your /etc/hosts file"; exit 1)
 
 ## Tool Binaries

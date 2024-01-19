@@ -28,4 +28,5 @@ Dockerfile.cross
 
 # wasm binaries
 *.wasm
+dist/
 
