@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"strings"
 )
 
 type Client struct {
@@ -43,7 +44,7 @@ func WithAuthToken(tok string) ClientOpt {
 
 		cl.httpClient.Transport = &authorizedRoundTripper{
 			next: next,
-			tok:  tok,
+			tok:  strings.TrimSpace(tok),
 		}
 
 	}

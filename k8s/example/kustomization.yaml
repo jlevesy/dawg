@@ -1,0 +1,9 @@
+labels:
+  - pairs:
+      app.kubernetes.io/created-by: example-app
+      app.kubernetes.io/instance: example-app
+      app.kubernetes.io/part-of: example-app
+namespace: example
+resources:
+- namespace.yaml
+- example_dashboard.yaml

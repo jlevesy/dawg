@@ -14,7 +14,23 @@ spec:
     singular: dashboard
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.generator
+      name: Generator
+      type: string
+    - jsonPath: .status.syncStatus
+      name: Sync Status
+      type: string
+    - jsonPath: .status.errorurl
+      name: Error
+      type: string
+    - jsonPath: .status.grafana.uid
+      name: UID
+      type: string
+    - jsonPath: .status.grafana.url
+      name: Path
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Dashboard is the Schema for the dashboards API

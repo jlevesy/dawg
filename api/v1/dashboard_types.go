@@ -50,6 +50,11 @@ type GrafanaInfo struct {
 	Slug    string `json:"slug,omitempty"`
 }
 
+//+kubebuilder:printcolumn:name="Generator",type=string,JSONPath=`.spec.generator`
+//+kubebuilder:printcolumn:name="Sync Status",type=string,JSONPath=`.status.syncStatus`
+//+kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.errorurl`
+//+kubebuilder:printcolumn:name="UID",type=string,JSONPath=`.status.grafana.uid`
+//+kubebuilder:printcolumn:name="Path",type=string,JSONPath=`.status.grafana.url`
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

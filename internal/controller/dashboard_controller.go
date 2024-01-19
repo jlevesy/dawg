@@ -7,6 +7,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -59,7 +60,7 @@ func (r *DashboardReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *DashboardReconciler) applyDashboard(ctx context.Context, dashboard *dawgv1.Dashboard, logger logr.Logger) (ctrl.Result, error) {
 	logger = logger.WithValues("generator", dashboard.Spec.Generator)
 
-	logger.V(1).Info("Applying Dashboard")
+	logger.Info("Applying Dashboard")
 
 	if !controllerutil.ContainsFinalizer(dashboard, finalizer) {
 		controllerutil.AddFinalizer(dashboard, finalizer)
@@ -84,7 +85,8 @@ func (r *DashboardReconciler) applyDashboard(ctx context.Context, dashboard *daw
 			err,
 			logger,
 		)
-		return ctrl.Result{}, err
+		// If the generator is malformed, do not retry.
+		return ctrl.Result{}, nil
 	}
 
 	generator, err := r.generatorStore.Load(ctx, generatorURL)
@@ -105,8 +107,10 @@ func (r *DashboardReconciler) applyDashboard(ctx context.Context, dashboard *daw
 			ctx,
 			dashboard,
 			"Could not execute generator",
-			err, logger,
+			err,
+			logger,
 		)
+
 		return ctrl.Result{}, err
 	}
 
@@ -125,12 +129,13 @@ func (r *DashboardReconciler) applyDashboard(ctx context.Context, dashboard *daw
 			err,
 			logger,
 		)
+		// TODO be clever here: only retry if it makes sense.
 		return ctrl.Result{}, err
 	}
 
 	r.setSuccessStatus(ctx, dashboard, dashboardResult, logger)
 
-	logger.V(1).Info("Applied dashboard", "grafana_id", dashboardResult.ID)
+	logger.Info("Applied dashboard", "grafana_id", dashboardResult.ID)
 
 	return ctrl.Result{}, nil
 }
@@ -140,7 +145,18 @@ func (r *DashboardReconciler) deleteDashboard(ctx context.Context, dashboard *da
 		return ctrl.Result{}, nil
 	}
 
-	logger.V(1).Info("Deleting Dashboard")
+	if dashboard.Status.SyncStatus != dawgv1.DashboardStatusOK {
+		logger.Info("Deleting a NOK dashboard, only removing the finalizer")
+
+		controllerutil.RemoveFinalizer(dashboard, finalizer)
+		if err := r.k8sClient.Update(ctx, dashboard); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	logger.Info("Deleting Dashboard")
 
 	_, err := r.grafana.DeleteDashboard(ctx, &grafana.DeleteDashboardRequest{UID: dashboard.Status.Grafana.UID})
 	if err != nil {
@@ -152,7 +168,7 @@ func (r *DashboardReconciler) deleteDashboard(ctx context.Context, dashboard *da
 		return ctrl.Result{}, err
 	}
 
-	logger.V(1).Info("Deleted dashboard")
+	logger.Info("Deleted dashboard")
 
 	return ctrl.Result{}, nil
 }
@@ -167,7 +183,7 @@ func (r *DashboardReconciler) setSuccessStatus(ctx context.Context, dashboard *d
 	dashboard.Status.Error = ""
 
 	if err := r.k8sClient.Status().Update(ctx, dashboard); err != nil {
-		logger.Error(err, "Could not update dasboard status")
+		logger.Error(err, "Could not update dashboard status")
 	}
 }
 
@@ -179,7 +195,7 @@ func (r *DashboardReconciler) setFailureStatus(ctx context.Context, dashboard *d
 	dashboard.Status.Error = err.Error()
 
 	if err := r.k8sClient.Status().Update(ctx, dashboard); err != nil {
-		logger.Error(err, "Could not update dasboard status")
+		logger.Error(err, "Could not update dashboard status")
 	}
 }
 
@@ -189,6 +205,11 @@ func (r *DashboardReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dawgv1.Dashboard{}).
+		// Do not process status updates.
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		// Do not process delete events as we're using finalizers.
+		WithEventFilter(predicate.Funcs{
+			DeleteFunc: func(e event.DeleteEvent) bool { return false },
+		}).
 		Complete(r)
 }

@@ -23,6 +23,14 @@ spec:
       containers:
       - image: ko://github.com/jlevesy/dawg/cmd/controller
         name: controller
+        env:
+        - name: GRAFANA_URL
+          value: http://grafana.grafana.svc.cluster.local
+        - name: GRAFANA_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: .grafanatoken
+              name: grafana-token
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

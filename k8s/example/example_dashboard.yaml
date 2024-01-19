@@ -1,0 +1,9 @@
+---
+apiVersion: dawg.urcloud.cc/v1
+kind: Dashboard
+metadata:
+  name: example
+spec:
+  generator: registry://dawg-dev.localhost:5000/dashboards/simple:v0.0.1
+  config: |
+    app_name: foo
